@@ -56,52 +56,42 @@ print(df_sorted.head())
 # =========================================
 
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
 
-# ======================
-# LOAD DATA
-# ======================
+# Load data
 df1 = pd.read_csv(r'C:\Users\Admin\Downloads\Air Quality.csv')
 df2 = pd.read_csv(r'C:\Users\Admin\Downloads\heart.csv')
 
-# ======================
-# BASIC INFO
-# ======================
-print(ds.head())
-print(ds.info())
+# Basic info
+print(df1.head())
+print(df2.head())
 
-# ======================
-# DATA CLEANING
-# ======================
-#data cleaning
-print("Before Cleaning",df1.shape,df2.shape)
-df1=df1.drop_duplicates()
-df2=df2.drop_duplicates()
-df1=df1.fillna(df1.mean(numeric_only=True))
-df2=df2.fillna(df2.mean(numeric_only=True))
-print("After Cleaning",df1.shape,df2.shape)
+# Cleaning
+df1 = df1.drop_duplicates()
+df2 = df2.drop_duplicates()
 
-# ======================
-# DATA INTEGRATION
-# ======================
-#data Integration
-df1['id']=range(len(df1))
-df2['id']=range(len(df2))
-data=pd.merge(df1,df2,on='id')
-data.head()
+df1 = df1.fillna(df1.mean(numeric_only=True))
+df2 = df2.fillna(df2.mean(numeric_only=True))
 
-#Error Correction
-data=data[(data>=0).all(axis=1)]
-print("After Error Correction",data.shape)
+# Integration
+df1['id'] = range(len(df1))
+df2['id'] = range(len(df2))
+data = pd.merge(df1, df2, on='id')
 
-#data Model Building
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-X=data.drop('target',axis=1)
-y=data['target']
-X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2)
-model=LogisticRegression(max_iter=2000,solver='liblinear')
-model.fit(X_)
+# Error correction
+data = data[(data >= 0).all(axis=1)]
+
+# Model
+X = data.drop('target', axis=1)
+y = data['target']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+model = LogisticRegression(max_iter=2000, solver='liblinear')
+model.fit(X_train, y_train)
+
+print("Model trained successfully")
 
 
 
