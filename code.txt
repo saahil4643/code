@@ -1,40 +1,37 @@
 # =========================================
-# FACEBOOK DATA PROCESSING
+# FACEBOOK DATA PROCESSING + VISUALIZATION
 # =========================================
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-df=pd.read_csv(r"C:\Users\Admin\Downloads\Facebook\Facebook_dataset.csv")
+# Load dataset
+df = pd.read_excel("dataset_Facebook_1.xlsx")
 
-df.head()
+# ======================
+# BASIC INFO
+# ======================
+print(df.head())
+print(df.info())
 
-df.columns
-
-
-df.info()
-
-
-df.isnull().sum()
-
-df=df.dropna(how='any',axis=0)
-
-print(df.columns.tolist())
+# ======================
+# DATA CLEANING
+# ======================
+df = df.dropna()
 
 # ======================
 # CREATE SUBSETS
 # ======================
-df1=df[['Category','Type','Total Interactions']]
-df2=df[['Category','Post Month','Post Hour']]
-print(df1)
-print(df2)
-
+df1 = df.loc[1:245, ['Category', 'Lifetime Post Total Reach', 'Type', 'Total Interactions']]
+df2 = df.loc[245:500, ['Post Month', 'Post Weekday', 'Post Hour', 'Lifetime Post Consumers']]
 
 # ======================
 # MERGE DATA
 # ======================
-merged_df=pd.merge(df1,df2,on='Category')
-print(merged_df)
+df_row = pd.concat([df1, df2])
+print(df_row.head())
 
 # ======================
 # SHAPE & RESHAPE
@@ -45,24 +42,13 @@ print(df.melt().head())
 # ======================
 # TRANSPOSE
 # ======================
-df_transpose=df.head().T
-print(df_transpose)
-
-
-print(df.shape)
-
+print(df.transpose())
 
 # ======================
 # SORTING
 # ======================
-df_sorted=df.sort_values(by=['Category','Post Month'])
+df_sorted = df.sort_values(by='Category')
 print(df_sorted.head())
-
-
-df_pivot=df.pivot_table(values='Total Interactions',index='Category',columns='Type')
-print(df_pivot)
-
-
 
 -------------------------------------------------------------------------------------------------------------------------------------------------
 # =========================================
@@ -116,6 +102,9 @@ y=data['target']
 X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2)
 model=LogisticRegression(max_iter=2000,solver='liblinear')
 model.fit(X_)
+
+
+
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -306,3 +295,55 @@ if len(df.columns) > 2:
     plt.show()
 
 print("\nVisualization Completed Successfully ✅")
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------
+
+
+
+import requests
+from bs4 import BeautifulSoup
+import csv
+import json
+
+# Sample product page (safe for scraping)
+url = "https://webscraper.io/test-sites/e-commerce/static/product/518"
+
+response = requests.get(url)
+soup = BeautifulSoup(response.text, "html.parser")
+
+reviews = soup.find_all("div", class_="review")
+
+data = []
+
+for review in reviews:
+    name = review.find("span", class_="review-author").text.strip()
+    rating = len(review.find_all("span", class_="glyphicon-star"))
+    comment = review.find("p", class_="review-text").text.strip()
+
+    review_data = {
+        "name": name,
+        "rating": rating,
+        "comment": comment
+    }
+
+    data.append(review_data)
+
+    # Print (optional)
+    print(review_data)
+
+
+# ✅ Save to CSV
+with open("reviews.csv", "w", newline="", encoding="utf-8") as file:
+    writer = csv.DictWriter(file, fieldnames=["name", "rating", "comment"])
+    writer.writeheader()
+    writer.writerows(data)
+
+
+# ✅ Save to JSON
+with open("reviews.json", "w", encoding="utf-8") as file:
+    json.dump(data, file, indent=4)
+
+print("\nData saved to reviews.csv and reviews.json")
