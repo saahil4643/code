@@ -79,8 +79,9 @@ df1['id'] = range(len(df1))
 df2['id'] = range(len(df2))
 data = pd.merge(df1, df2, on='id')
 
-# Error correction
-data = data[(data >= 0).all(axis=1)]
+# ✅ FIXED Error correction
+numeric_cols = data.select_dtypes(include=['number']).columns
+data = data[(data[numeric_cols] >= 0).all(axis=1)]
 
 # Model
 X = data.drop('target', axis=1)
