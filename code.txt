@@ -1,340 +1,638 @@
-# =========================================
-# FACEBOOK DATA PROCESSING + VISUALIZATION
-# =========================================
+AI 1ST PRACTICAL
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+Travelling Salesperson Problem (TSP) using two AI techniques:
 
-# Load dataset
-df = pd.read_excel("dataset_Facebook_1.xlsx")
+Nearest Neighbor Heuristic → to get an initial path
+Hill Climbing Search → to improve that path
 
-# ======================
-# BASIC INFO
-# ======================
-print(df.head())
-print(df.info())
+-----------------------------------------------------------------CODE----------------------------------------------------------------------------
+import math
+import random
 
-# ======================
-# DATA CLEANING
-# ======================
-df = df.dropna()
+def distance(city1, city2):
+    return math.sqrt((city1[0] - city2[0])**2 + (city1[1] - city2[1])**2)
 
-# ======================
-# CREATE SUBSETS
-# ======================
-df1 = df.loc[1:245, ['Category', 'Lifetime Post Total Reach', 'Type', 'Total Interactions']]
-df2 = df.loc[245:500, ['Post Month', 'Post Weekday', 'Post Hour', 'Lifetime Post Consumers']]
+def total_distance(path, cities):
+    cost = 0
 
-# ======================
-# MERGE DATA
-# ======================
-df_row = pd.concat([df1, df2])
-print(df_row.head())
+    for i in range(len(path) - 1):
+        cost += distance(cities[path[i]], cities[path[i + 1]])
 
-# ======================
-# SHAPE & RESHAPE
-# ======================
-print("Shape:", df.shape)
-print(df.melt().head())
+    cost += distance(cities[path[-1]], cities[path[0]])  # Return to start
+    return cost
 
-# ======================
-# TRANSPOSE
-# ======================
-print(df.transpose())
+def nearest_neighbor(cities):
+    n = len(cities)
 
-# ======================
-# SORTING
-# ======================
-df_sorted = df.sort_values(by='Category')
-print(df_sorted.head())
+    unvisited = list(range(n))
+    path = [unvisited.pop(0)]
 
--------------------------------------------------------------------------------------------------------------------------------------------------
-# =========================================
-# AIR QUALITY + HEART DATA PROCESSING
-# =========================================
+    while unvisited:
+        last = path[-1]
 
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+        next_city = min(
+            unvisited,
+            key=lambda city: distance(cities[last], cities[city])
+        )
 
-# Load data
-df1 = pd.read_csv(r'C:\Users\Admin\Downloads\Air Quality.csv')
-df2 = pd.read_csv(r'C:\Users\Admin\Downloads\heart.csv')
+        path.append(next_city)
+        unvisited.remove(next_city)
 
-# Basic info
-print(df1.head())
-print(df2.head())
+    return path
 
-# Cleaning
-df1 = df1.drop_duplicates()
-df2 = df2.drop_duplicates()
+def hill_climbing(cities, path):
+    improved = True
 
-df1 = df1.fillna(df1.mean(numeric_only=True))
-df2 = df2.fillna(df2.mean(numeric_only=True))
+    best_path = path[:]
+    best_cost = total_distance(best_path, cities)
 
-# Integration
-df1['id'] = range(len(df1))
-df2['id'] = range(len(df2))
-data = pd.merge(df1, df2, on='id')
+    while improved:
+        improved = False
 
-# ✅ FIXED Error correction
-numeric_cols = data.select_dtypes(include=['number']).columns
-data = data[(data[numeric_cols] >= 0).all(axis=1)]
+        for i in range(1, len(path) - 1):
 
-# Model
-X = data.drop('target', axis=1)
-y = data['target']
+            for j in range(i + 1, len(path)):
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+                new_path = best_path[:]
 
-model = LogisticRegression(max_iter=2000, solver='liblinear')
-model.fit(X_train, y_train)
+                new_path[i:j] = reversed(new_path[i:j])
 
-print("Model trained successfully")
+                new_cost = total_distance(new_path, cities)
 
+                if new_cost < best_cost:
+                    best_path = new_path
+                    best_cost = new_cost
+                    improved = True
 
+    return best_path
 
+cities = {
+    0: (0, 0),
+    1: (2, 6),
+    2: (5, 3),
+    3: (6, 7),
+    4: (8, 2)
+}
 
-------------------------------------------------------------------------------------------------------------------------------------------------------
+initial_path = nearest_neighbor(cities)
 
+optimized_path = hill_climbing(cities, initial_path)
 
+print("Initial Path (Nearest Neighbor):", initial_path)
+print("Initial Distance:", total_distance(initial_path, cities))
 
-# =========================================
-# EXPERIMENT 6 - MAPREDUCE USING PYTHON
-# =========================================
+print("\nOptimized Path (Hill Climbing):", optimized_path)
+print("Optimized Distance:", total_distance(optimized_path, cities))
 
-import pandas as pd
-from collections import defaultdict
 
-# ======================
-# LOAD DATASET
-# ======================
-df = pd.read_csv("heart.csv")
 
-print("First 5 rows:\n", df.head())
-print("\nDataset Info:\n")
-print(df.info())
 
-print("\nStatistical Summary:\n")
-print(df.describe())
+------------------------------------------------------------CODE PRACTICAL 2----------------------------------------------------------------------------
 
-# ======================
-# MAP STEP
-# ======================
-mapped = []
+# LP-II AI Practical
+# 1. N-Queens (Hill Climbing)
+# 2. Water Jug (BFS)
+# 3. Tower of Hanoi (Recursion)
 
-for index, row in df.iterrows():
-    mapped.append((row['target'], 1))
+import random
+from collections import deque
 
-print("\nMapped Data (first 10):")
-print(mapped[:10])
 
-# ======================
-# SHUFFLE STEP
-# ======================
-shuffled = defaultdict(list)
+# ---------------------------------------------------
+# 1. N-Queens Problem using Hill Climbing
+# ---------------------------------------------------
 
-for target, count in mapped:
-    shuffled[target].append(count)
+def heuristic(state):
+    attacks = 0
+    n = len(state)
 
-print("\nShuffled Data:")
-for key in shuffled:
-    print(f"{key} → {shuffled[key][:10]} ...")
+    for i in range(n):
+        for j in range(i + 1, n):
 
-# ======================
-# REDUCE STEP
-# ======================
-reduced = {}
+            # Check same row or diagonal attack
+            if state[i] == state[j] or abs(state[i] - state[j]) == j - i:
+                attacks += 1
 
-for target in shuffled:
-    reduced[target] = sum(shuffled[target])
+    return attacks
 
-print("\nFinal Reduced Output:")
-print(reduced)
 
-# ======================
-# EXTRA ANALYSIS
-# ======================
+def random_state(n):
+    return [random.randint(0, n - 1) for _ in range(n)]
 
-# 1. Filter high cholesterol
-high_chol = df[df['chol'] > 250]
-print("\nHigh Cholesterol Patients:\n", high_chol.head())
 
-# 2. Group by gender
-grouped_data = df.groupby('sex')['target'].sum()
-print("\nHeart Disease Count by Gender:\n", grouped_data)
+def hill_climbing(n):
 
-# 3. Sort by cholesterol
-sorted_data = df.sort_values(by='chol', ascending=False)
-print("\nTop Cholesterol Values:\n", sorted_data.head())
+    # Generate random initial state
+    current = random_state(n)
 
-# 4. Count chest pain types
-cp_count = df.groupby('cp').size()
-print("\nChest Pain Type Count:\n", cp_count)
+    # Calculate heuristic value
+    current_h = heuristic(current)
 
-print("\nExperiment 6 Completed Successfully ✅")
+    while True:
 
+        neighbors = []
 
+        # Generate neighboring states
+        for col in range(n):
+            for row in range(n):
 
+                if row != current[col]:
 
+                    neighbor = current.copy()
+                    neighbor[col] = row
 
----------------------------------------------------------------------------------------------------------------------------------------
+                    neighbors.append(neighbor)
 
+        # Assume current state is best
+        next_state = current
+        next_h = current_h
 
+        # Find best neighbor
+        for neighbor in neighbors:
 
+            h = heuristic(neighbor)
 
+            if h < next_h:
+                next_state = neighbor
+                next_h = h
 
+        # Stop if no better state found
+        if next_h >= current_h:
+            break
 
+        # Move to better state
+        current, current_h = next_state, next_h
 
+    return current, current_h
 
 
+# Run N-Queens
+solution, conflicts = hill_climbing(8)
 
+print("----- N-Queens Problem -----")
+print("Solution:", solution)
+print("Number of Conflicts:", conflicts)
 
 
+# ---------------------------------------------------
+# 2. Water Jug Problem using BFS
+# ---------------------------------------------------
 
+def water_jug(jug1, jug2, target):
 
+    visited = set()
 
+    queue = deque([(0, 0)])
 
+    path = []
 
+    while queue:
 
+        x, y = queue.popleft()
 
+        # Skip visited states
+        if (x, y) in visited:
+            continue
 
+        visited.add((x, y))
 
-# ==============================
-# EXPERIMENT 7 - DATA VISUALIZATION
-# ==============================
+        path.append((x, y))
 
-# Step 1: Import Libraries
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+        # Check target
+        if x == target or y == target:
 
-# Step 2: Load Dataset
-# Change file name accordingly
-df = pd.read_csv("your_dataset.csv")  
-# OR if Excel:
-# df = pd.read_excel("your_dataset.xlsx")
+            print("\n----- Water Jug Problem -----")
+            print("Solution Path:")
 
-# Step 3: Basic Info
-print("First 5 rows:\n", df.head())
-print("\nDataset Info:\n")
-df.info()
+            for step in path:
+                print(step)
 
-# Step 4: Handle Missing Values
-df = df.dropna()
+            return
 
-# Step 5: Select only numeric columns for visualization
-numeric_df = df.select_dtypes(include=['number'])
+        # Generate all possible next states
+        queue.extend([
 
-# ==============================
-# 1. BOX PLOT (All numeric columns)
-# ==============================
-plt.figure(figsize=(12,6))
-sns.boxplot(data=numeric_df)
-plt.title("Box Plot of Numerical Features")
-plt.xticks(rotation=45)
-plt.show()
+            (jug1, y),  # Fill jug1
+            (x, jug2),  # Fill jug2
 
-# ==============================
-# 2. SCATTER PLOT
-# ==============================
-# Select any two columns from dataset
-col1 = numeric_df.columns[0]
-col2 = numeric_df.columns[1]
+            (0, y),     # Empty jug1
+            (x, 0),     # Empty jug2
 
-plt.figure(figsize=(6,4))
-sns.scatterplot(x=numeric_df[col1], y=numeric_df[col2])
-plt.title(f"Scatter Plot: {col1} vs {col2}")
-plt.show()
+            # Pour jug2 -> jug1
+            (min(jug1, x + y), max(0, x + y - jug1)),
 
-# ==============================
-# 3. HISTOGRAM
-# ==============================
-numeric_df.hist(figsize=(12,8))
-plt.suptitle("Histogram of Features")
-plt.show()
+            # Pour jug1 -> jug2
+            (max(0, x + y - jug2), min(jug2, x + y))
+        ])
 
-# ==============================
-# 4. HEATMAP (Correlation)
-# ==============================
-plt.figure(figsize=(10,6))
-corr = numeric_df.corr()
-sns.heatmap(corr, annot=True)
-plt.title("Correlation Heatmap")
-plt.show()
+    print("No solution")
 
-# ==============================
-# 5. PAIRPLOT
-# ==============================
-sns.pairplot(numeric_df)
-plt.show()
 
-# ==============================
-# 6. VIOLIN PLOT
-# ==============================
-# If dataset has categorical column
-if len(df.columns) > 2:
-    cat_col = df.columns[0]
-    num_col = numeric_df.columns[0]
+# Run Water Jug
+water_jug(4, 3, 2)
 
-    plt.figure(figsize=(6,4))
-    sns.violinplot(x=df[cat_col], y=df[num_col])
-    plt.title("Violin Plot")
-    plt.xticks(rotation=45)
-    plt.show()
 
-print("\nVisualization Completed Successfully ✅")
+# ---------------------------------------------------
+# 3. Tower of Hanoi using Recursion
+# ---------------------------------------------------
 
+def towers_of_hanoi(n, source, auxiliary, destination):
 
+    # Base condition
+    if n == 1:
+        print(f"Move disk 1 from {source} to {destination}")
+        return
 
+    # Move n-1 disks to auxiliary
+    towers_of_hanoi(n - 1, source, destination, auxiliary)
 
-------------------------------------------------------------------------------------------------------------------------------
+    # Move largest disk
+    print(f"Move disk {n} from {source} to {destination}")
 
+    # Move n-1 disks to destination
+    towers_of_hanoi(n - 1, auxiliary, source, destination)
 
 
-import requests
-from bs4 import BeautifulSoup
-import csv
-import json
+# Run Tower of Hanoi
+print("\n----- Tower of Hanoi -----")
+towers_of_hanoi(3, 'A', 'B', 'C')
 
-# Sample product page (safe for scraping)
-url = "https://webscraper.io/test-sites/e-commerce/static/product/518"
 
-response = requests.get(url)
-soup = BeautifulSoup(response.text, "html.parser")
 
-reviews = soup.find_all("div", class_="review")
 
-data = []
+------------------------------------------------------------------------CODE PRACTICAL 3------------------------------------------------------------
 
-for review in reviews:
-    name = review.find("span", class_="review-author").text.strip()
-    rating = len(review.find_all("span", class_="glyphicon-star"))
-    comment = review.find("p", class_="review-text").text.strip()
 
-    review_data = {
-        "name": name,
-        "rating": rating,
-        "comment": comment
-    }
 
-    data.append(review_data)
 
-    # Print (optional)
-    print(review_data)
+# Practical No 3
+# Program: Sorting Algorithms using Knowledge Representation and Reasoning
 
+# ----- Bubble Sort -----
+def bubble_sort(arr):
+    arr = arr.copy()
+    n = len(arr)
 
-# ✅ Save to CSV
-with open("reviews.csv", "w", newline="", encoding="utf-8") as file:
-    writer = csv.DictWriter(file, fieldnames=["name", "rating", "comment"])
-    writer.writeheader()
-    writer.writerows(data)
+    for i in range(n):
+        for j in range(0, n - i - 1):
 
+            # Compare neighboring elements
+            if arr[j] > arr[j + 1]:
 
-# ✅ Save to JSON
-with open("reviews.json", "w", encoding="utf-8") as file:
-    json.dump(data, file, indent=4)
+                # Swap if left element is greater
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
 
-print("\nData saved to reviews.csv and reviews.json")
+    return arr
+
+
+# ----- Selection Sort -----
+def selection_sort(arr):
+    arr = arr.copy()
+    n = len(arr)
+
+    for i in range(n):
+
+        # Assume current index has minimum value
+        min_index = i
+
+        # Find actual minimum element
+        for j in range(i + 1, n):
+            if arr[j] < arr[min_index]:
+                min_index = j
+
+        # Swap minimum element with current position
+        arr[i], arr[min_index] = arr[min_index], arr[i]
+
+    return arr
+
+
+# ----- Insertion Sort -----
+def insertion_sort(arr):
+    arr = arr.copy()
+
+    for i in range(1, len(arr)):
+
+        # Current element to insert
+        key = arr[i]
+
+        # Previous index
+        j = i - 1
+
+        # Shift elements greater than key
+        while j >= 0 and key < arr[j]:
+            arr[j + 1] = arr[j]
+            j -= 1
+
+        # Insert key at correct position
+        arr[j + 1] = key
+
+    return arr
+
+
+# ----- Knowledge Representation -----
+# Rules stored in dictionary form
+
+rules = {
+    "small": insertion_sort,
+    "medium": selection_sort,
+    "large": bubble_sort
+}
+
+
+# ----- Reasoning Function -----
+def choose_sort(arr):
+
+    n = len(arr)
+
+    # Decide rule based on data size
+    if n <= 5:
+        rule = "small"
+
+    elif n <= 10:
+        rule = "medium"
+
+    else:
+        rule = "large"
+
+    print("Reasoning: Using", rule, "data rule")
+
+    # Select sorting algorithm
+    sorting_function = rules[rule]
+
+    # Execute selected sorting algorithm
+    return sorting_function(arr)
+
+
+# ----- Main Program -----
+
+# Take input from user
+data = list(map(int, input("Enter numbers separated by space: ").split()))
+
+# Call reasoning function
+sorted_data = choose_sort(data)
+
+# Display final sorted list
+print("Sorted List:", sorted_data)
+
+------------------------------------------------------------------------------CODE PRACTICAL 4--------------------------------------------------------------
+	
+
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from collections import Counter
+
+# Download required datasets
+nltk.download('punkt')
+nltk.download('punkt_tab')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('averaged_perceptron_tagger_eng')
+
+# Input text
+text = "Artificial Intelligence and Machine Learning are important technologies in modern computer science."
+
+# Print original text
+print("Original Text:\n", text)
+
+# Tokenization
+tokens = word_tokenize(text)
+print("\nTokens:\n", tokens)
+
+# Word Frequency
+freq = Counter(tokens)
+print("\nWord Frequency:\n", freq)
+
+# Stopword Removal
+stop_words = set(stopwords.words('english'))
+
+filtered_words = [
+    word for word in tokens
+    if word.lower() not in stop_words
+]
+
+print("\nAfter Removing Stopwords:\n", filtered_words)
+
+# POS Tagging
+pos_tags = nltk.pos_tag(filtered_words)
+
+print("\nPOS Tagging:\n", pos_tags)
+
+
+-------------------------------------------------------------------CODE PRACTICAL 5-----------------------------------------------------------------------
+
+import random
+
+# Create empty board
+board = [' '] * 9
+
+# Display board
+def display():
+    print(board[0], "|", board[1], "|", board[2])
+    print("--+---+--")
+    print(board[3], "|", board[4], "|", board[5])
+    print("--+---+--")
+    print(board[6], "|", board[7], "|", board[8])
+    print()
+
+# Check winner
+def check_win(player):
+
+    wins = [
+        (0,1,2), (3,4,5), (6,7,8),
+        (0,3,6), (1,4,7), (2,5,8),
+        (0,4,8), (2,4,6)
+    ]
+
+    for a, b, c in wins:
+        if board[a] == board[b] == board[c] == player:
+            return True
+
+    return False
+
+# User move
+def user_move():
+
+    while True:
+
+        move = int(input("Enter position (1-9): ")) - 1
+
+        if move < 0 or move > 8:
+            print("Invalid Position!")
+
+        elif board[move] != ' ':
+            print("Position already filled!")
+
+        else:
+            board[move] = 'X'
+            break
+
+# Computer move
+def computer_move():
+
+    empty = [i for i in range(9) if board[i] == ' ']
+
+    move = random.choice(empty)
+
+    board[move] = 'O'
+
+# Main game
+while True:
+
+    display()
+
+    user_move()
+
+    if check_win('X'):
+        display()
+        print("You Win!")
+        break
+
+    if ' ' not in board:
+        display()
+        print("Match Draw!")
+        break
+
+    print("Computer Move:")
+
+    computer_move()
+
+    if check_win('O'):
+        display()
+        print("Computer Wins!")
+        break
+
+    if ' ' not in board:
+        display()
+        print("Match Draw!")
+        break
+
+
+
+-------------------------------------------THOERY-----------------------------------------------------------------------------------------------------------
+
+PRACTICAL 1 TSP 
+The Travelling Salesperson Problem (TSP) is one of the most popular optimization problems in Artificial Intelligence and computer science. The objective of the problem is to find the shortest possible route that visits every city exactly once and returns to the starting city. As the number of cities increases, the number of possible routes grows very rapidly, making it difficult to find the perfect solution using brute force methods. Therefore, heuristic and search-based techniques are commonly used to obtain near-optimal solutions efficiently.
+
+In this practical, two important AI techniques are used: the Nearest Neighbor heuristic and the Hill Climbing optimization algorithm. The Nearest Neighbor method is a greedy heuristic approach that starts from a city and repeatedly selects the nearest unvisited city until all cities are visited. This technique is simple, fast, and easy to implement. Although it does not always produce the best possible solution, it provides a good initial route in a short amount of time.
+
+After generating the initial path, the Hill Climbing algorithm is applied to improve the solution. Hill Climbing is a local search optimization technique that attempts to minimize the total travel distance by making small modifications to the route. In this implementation, sections of the path are reversed and the new distance is calculated. If the modified route produces a shorter distance, the new route is accepted as the better solution. This process continues until no further improvement is possible. Hill Climbing helps in reducing the overall path cost and improving the efficiency of the solution.
+
+The program first defines a function to calculate the Euclidean distance between two cities using their coordinates. Another function calculates the total travel distance of a complete path, including the return to the starting city. The Nearest Neighbor function generates the initial route, while the Hill Climbing function optimizes it further. Finally, the program displays both the initial path and the optimized path along with their respective distances.
+
+This practical demonstrates the application of heuristic search and local optimization techniques in solving complex real-world problems. It also highlights the importance of Artificial Intelligence methods in route planning, navigation systems, logistics, robotics, and network optimization.
+
+
+
+-----------------------------------------------------------THOERY PRACTICAL 2 -----------------------------------------------------------------------------
+
+
+This practical demonstrates the implementation of important Artificial Intelligence problem-solving techniques using Python. The practical includes three classical AI problems: the N-Queens Problem using Hill Climbing, the Water Jug Problem using Breadth First Search (BFS), and the Tower of Hanoi using Recursion. These problems help in understanding state-space representation, search algorithms, heuristic functions, and recursive problem solving.
+
+The first problem implemented is the N-Queens Problem using the Hill Climbing algorithm. The objective of the N-Queens problem is to place N queens on an N×N chessboard such that no queen attacks another queen. In this practical, the Hill Climbing algorithm is used as a local search technique to reduce conflicts between queens step by step. A heuristic function is used to calculate the number of attacking pairs of queens. The algorithm starts with a random board configuration and continuously moves toward a better neighboring state with fewer conflicts until no further improvement is possible. Hill Climbing is simple and efficient, but it may sometimes get stuck in local optima where no better neighboring state exists even though the global solution has not been reached.
+
+The second problem is the Water Jug Problem using Breadth First Search (BFS). The goal of this problem is to measure a target quantity of water using two jugs of fixed capacities. In the given practical, BFS is used to systematically explore all possible states level by level. Each state represents the quantity of water present in both jugs. The algorithm performs operations such as filling, emptying, and pouring water between jugs to generate new states. BFS guarantees finding the shortest path to the solution if one exists. A queue is used to store unexplored states, while a visited set prevents repeated processing of the same state. This problem demonstrates state-space search and systematic problem solving in AI.
+
+The third problem is the Tower of Hanoi using Recursion. The Tower of Hanoi is a classical recursive problem where disks must be moved from one rod to another while following certain rules. Only one disk can be moved at a time, and a larger disk cannot be placed on a smaller disk. The recursive solution divides the main problem into smaller subproblems. First, smaller disks are moved to an auxiliary rod, then the largest disk is moved to the destination rod, and finally the smaller disks are moved onto the largest disk. This process continues recursively until all disks are transferred successfully. The minimum number of moves required to solve the problem is:
+
+2raise to n −1
+
+This problem demonstrates recursion, divide-and-conquer strategy, and mathematical problem solving.
+
+Overall, this practical helps in understanding important AI concepts such as heuristic search, local search algorithms, state-space representation, graph traversal techniques, BFS, and recursion. These problems form the foundation of many advanced Artificial Intelligence and optimization techniques used in real-world applications.
+
+
+
+
+
+
+--------------------------------------------------------theory practical 3-----------------------------------------------
+
+Sorting Algorithms using Knowledge Representation and Reasoning
+
+This practical demonstrates the implementation of different sorting algorithms along with simple Artificial Intelligence concepts such as Knowledge Representation and Reasoning. The program uses Bubble Sort, Selection Sort, and Insertion Sort to arrange data in ascending order. Based on the size of the input data, the system automatically selects the most suitable sorting algorithm using predefined rules.
+
+Sorting is the process of arranging data in a specific order, usually ascending or descending. Sorting improves searching efficiency, data management, and processing speed. Different sorting algorithms are suitable for different types and sizes of data.
+
+In this practical, three sorting algorithms are used:
+
+1. Bubble Sort
+
+Bubble Sort repeatedly compares neighboring elements and swaps them if they are in the wrong order. After every pass, the largest element moves to the end of the list. It is simple to understand but inefficient for large datasets because it performs many comparisons and swaps.
+
+2. Selection Sort
+
+Selection Sort repeatedly finds the smallest element from the unsorted part of the array and places it at the correct position. It performs fewer swaps compared to Bubble Sort but still requires many comparisons.
+
+3. Insertion Sort
+
+Insertion Sort assumes that the left side of the array is already sorted. It takes one element at a time and inserts it into its correct position. It is efficient for small and nearly sorted datasets.
+
+The Artificial Intelligence concept used in this practical is Knowledge Representation and Reasoning.
+
+Knowledge Representation
+
+Knowledge Representation means storing knowledge or rules in a structured form so that the system can use them for decision-making. In this program, rules are stored using a Python dictionary:
+
+rules = {
+    "small": insertion_sort,
+    "medium": selection_sort,
+    "large": bubble_sort
+}
+
+These rules define which sorting algorithm should be used for different data sizes.
+
+Reasoning
+
+Reasoning is the process of making decisions using stored knowledge. The program checks the size of the input list and decides which sorting algorithm should be applied.
+
+If the dataset is small, Insertion Sort is selected.
+If the dataset is medium-sized, Selection Sort is selected.
+If the dataset is large, Bubble Sort is selected.
+
+Thus, the system behaves like a simple intelligent system because it automatically chooses an action based on conditions.
+
+The practical helps in understanding:
+
+Working of basic sorting algorithms
+Time complexity concepts
+Difference between sorting techniques
+Application of AI concepts like rule-based systems
+Decision-making using reasoning techniques
+Time Complexity
+Algorithm	Best Case	Average Case	Worst Case
+Bubble Sort	O(n)	O(n²)	O(n²)
+Selection Sort	O(n²)	O(n²)	O(n²)
+Insertion Sort	O(n)	O(n²)	O(n²)
+
+Among these three algorithms, Insertion Sort is generally considered better for small and nearly sorted data because it requires fewer operations and can achieve linear time complexity in the best case.
+
+-----------------------------------------------------THEORY 4-------------------------------------------------------------------------------------------
+
+This practical demonstrates the basic concepts of Natural Language Processing (NLP) using the Python NLTK library. Natural Language Processing is a branch of Artificial Intelligence that enables computers to understand, analyze, and process human language. In this practical, different NLP operations such as tokenization, word frequency counting, stopword removal, and Part-of-Speech (POS) tagging are performed on a given text sentence.
+
+The program first imports required libraries like NLTK, stopwords, word tokenizer, and Counter. NLTK (Natural Language Toolkit) is one of the most popular Python libraries used for text processing and language analysis. The necessary datasets such as punkt, stopwords, and averaged_perceptron_tagger are downloaded to perform tokenization and POS tagging operations.
+
+The input sentence is then processed using tokenization. Tokenization is the process of dividing a sentence into smaller units called tokens. These tokens are generally words or punctuation marks. Tokenization is considered the first step in NLP because computers cannot directly understand complete sentences.
+
+After tokenization, the program performs word frequency analysis using the Counter class. This operation counts how many times each word appears in the sentence. Word frequency analysis is useful in applications like text analytics, keyword extraction, search engines, and sentiment analysis.
+
+The next step is stopword removal. Stopwords are commonly used words such as “and”, “is”, “the”, and “in” which usually do not add important meaning to the sentence. Removing stopwords helps in reducing unnecessary data and improves text processing efficiency. The program compares each token with the English stopword list provided by NLTK and removes matching words.
+
+Finally, the program performs Part-of-Speech (POS) tagging. POS tagging identifies the grammatical category of each word, such as noun, verb, adjective, or pronoun. For example, a word may be tagged as NN (noun), JJ (adjective), or VB (verb). POS tagging is widely used in chatbots, machine translation, speech recognition, and information extraction systems.
+
+Overall, this practical helps in understanding the basic workflow of Natural Language Processing. It demonstrates how text data can be processed, analyzed, and interpreted using Python and NLTK. These NLP techniques are widely used in modern AI applications such as virtual assistants, recommendation systems, spam filtering, and language translation systems.
+
+---------------------------------------------------------------THOERY 5----------------------------------------------------------------------------------
+Theory of Tic-Tac-Toe Game
+
+The Tic-Tac-Toe game is a simple Artificial Intelligence practical implemented using Python programming language. The game is played between a user and a computer on a 3×3 grid. The user plays using symbol ‘X’ and the computer plays using symbol ‘O’. The main objective of the game is to place three same symbols in a row, column, or diagonal to win the game.
+
+In this program, the board is represented using a list containing 9 positions. Initially all positions are empty. The display function is used to print the game board in proper format. The user enters a position from 1 to 9, and the program checks whether the position is valid and empty before placing the symbol.
+
+The program uses a win checking function to verify whether a player has won the game. It checks all possible winning combinations such as rows, columns, and diagonals. If any combination contains the same symbol, the player is declared as winner.
+
+The computer move is generated automatically using the random module. The computer selects one empty position randomly and places its symbol on the board. The game continues inside a loop until either the user wins, the computer wins, or the match becomes draw.
+
+This practical demonstrates concepts such as list handling, functions, loops, conditional statements, and simple game logic in Python. It also introduces the basic idea of Artificial Intelligence where the computer performs automatic decision making.
+
